@@ -3,8 +3,9 @@
 
 // To compile (win): gcc cbmp.c main.c -o main.exe -std=c99
 // To run (win): main.exe example.bmp example_inv.bmp
-// 
+//
 // Shuokai
+// cd "g:\OneDrive_PRIVAT\OneDrive\Uni_DTU\3.semester\02132 Computersystemer E22\02132_workspace\02132_Assignment1\" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_inv.bmp}
 // cd "d:\OneDrive_PRIVAT\OneDrive\Uni_DTU\3.semester\02132 Computersystemer E22\02132_workspace\02132_Assignment1\" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_inv.bmp}
 
 // Mathias
@@ -15,31 +16,23 @@
 #include "cbmp.h"
 
 #define THRESHOLD 90
+#define BMP_SIZE 950
 
-void convert_to_binary_threshold(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_binary_threshold[BMP_WIDTH][BMP_HEIGTH]);
-
-// Function to invert pixels of an image (negative)
-void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
-{
-  for (int x = 0; x < BMP_WIDTH; x++)
-  {
-    for (int y = 0; y < BMP_HEIGTH; y++)
-    {
-      for (int c = 0; c < BMP_CHANNELS; c++)
-      {
-        output_image[x][y][c] = 255 - input_image[x][y][c];
-      }
-    }
-  }
-}
-
-void convert_RGB_to_gray(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image_gray[BMP_WIDTH][BMP_HEIGTH]);
-void convert_3dim_to_2dim(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
+void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char (*out_image_buffer)[BMP_SIZE]);
+void convert_3dim_to_2dim(unsigned char (*input_image)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
+void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*out_image_buffer)[BMP_SIZE]);
+int check_white_points(unsigned char (*out_image_buffer)[BMP_SIZE]);
+void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_SIZE]);
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-unsigned char output_image_gray[BMP_WIDTH][BMP_HEIGTH];
+
+unsigned char image1[BMP_SIZE][BMP_SIZE];
+unsigned char image2[BMP_SIZE][BMP_SIZE];
+
+unsigned char (*out_image_buffer)[BMP_HEIGTH] = image1;
+unsigned char (*out_image_buffer_temp)[BMP_HEIGTH] = image2;
 
 // Main function
 int main(int argc, char **argv)
@@ -61,10 +54,21 @@ int main(int argc, char **argv)
   // Load image from file
   read_bitmap(argv[1], input_image);
 
-  // Run inversion
-  // invert(input_image, output_image);
-  convert_RGB_to_gray(input_image, output_image_gray);
-  convert_3dim_to_2dim(output_image_gray,output_image);
+  // Run
+  convert_RGB_to_GS_and_apply_BT(input_image, out_image_buffer);
+  int i = 0;
+  while (check_white_points(out_image_buffer))
+  {
+    erode_image(out_image_buffer, out_image_buffer_temp);
+    swap_arrays(&out_image_buffer, &out_image_buffer_temp);
+    convert_3dim_to_2dim(out_image_buffer, output_image);
+    char str[100];
+    sprintf(str, "erode_%d.bmp", i);
+    i++;
+    write_bitmap(output_image, str);
+  }
+
+  convert_3dim_to_2dim(out_image_buffer, output_image);
 
   // Save image to file
   write_bitmap(output_image, argv[2]);
@@ -73,17 +77,18 @@ int main(int argc, char **argv)
   return 0;
 }
 
-void convert_RGB_to_gray(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image_gray[BMP_WIDTH][BMP_HEIGTH])
+void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char (*out_image_buffer)[BMP_SIZE])
 {
   for (int x = 0; x < BMP_WIDTH; x++)
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
-      output_image_gray[x][y] = (input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) / 3;
+      out_image_buffer[x][y] = ((input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) / 3) > THRESHOLD ? 255 : 0;
+      ;
     }
   }
 }
-void convert_3dim_to_2dim(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
+void convert_3dim_to_2dim(unsigned char (*input_image)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
 {
   for (int x = 0; x < BMP_WIDTH; x++)
   {
@@ -96,20 +101,52 @@ void convert_3dim_to_2dim(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsi
   }
 }
 
-void convert_to_binary_threshold(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_binary_threshold[BMP_WIDTH][BMP_HEIGTH])
+void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*out_image_buffer)[BMP_SIZE])
 {
   for (int x = 0; x < BMP_WIDTH; x++)
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
-      if (input_image[x][y] > THRESHOLD)
+      // printf("%d%s%d%s%d\n", x, " ", y, " ", input_image[x][y]);
+      int pos_left = 0, pos_right = 0, pos_top = 0, pos_down = 0;
+      if (x - 1 >= 0 && input_image_buffer[x - 1][y] == 0)
+        pos_left = 1;
+      if (x + 1 < BMP_WIDTH && input_image_buffer[x + 1][y] == 0)
+        pos_right = 1;
+      if (y - 1 >= 0 && input_image_buffer[x][y - 1] == 0)
+        pos_top = 1;
+      if (y + 1 < BMP_HEIGTH && input_image_buffer[x][y + 1] == 0)
+        pos_down = 1;
+      if (pos_left || pos_right || pos_top || pos_down)
       {
-        output_image_binary_threshold[x][y] = 255;
+        out_image_buffer[x][y] = 0;
       }
       else
       {
-        output_image_binary_threshold[x][y] = 0;
+        out_image_buffer[x][y] = input_image_buffer[x][y];
       }
     }
   }
+}
+
+int check_white_points(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH])
+{
+  for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+      if (input_image[x][y] == 255)
+      {
+        return 1;
+      }
+    }
+  }
+}
+
+void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_SIZE])
+{
+  unsigned char(*temp)[BMP_SIZE];
+  temp = *arr_1;
+  *arr_1 = *arr_2;
+  *arr_2 = temp;
 }
