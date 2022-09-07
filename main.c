@@ -64,20 +64,21 @@ int main(int argc, char **argv)
   // Run
   convert_RGB_to_GS_and_apply_BT(input_image, output_image_buffer);
   int i = 0;
-  while (check_white_points(output_image_buffer))
-  {
-    erode_image(output_image_buffer, output_image_buffer_temp);
-    swap_arrays(&output_image_buffer, &output_image_buffer_temp);
-    convert_3dim_to_2dim(output_image_buffer, output_image);
-    char str[100];
-    sprintf(str, "erode_%d.bmp", i);
-    i++;
-    write_bitmap(output_image, str);
-  }
-  convert_3dim_to_2dim(output_image_buffer, output_image);
+  // Erode image 
+  // while (check_white_points(output_image_buffer))
+  // {
+  //   erode_image(output_image_buffer, output_image_buffer_temp);
+  //   swap_arrays(&output_image_buffer, &output_image_buffer_temp);
+  //   convert_3dim_to_2dim(output_image_buffer, output_image);
+  //   char str[100];
+  //   sprintf(str, "erode_%d.bmp", i);
+  //   i++;
+  //   write_bitmap(output_image, str);
+  // }
+  // convert_3dim_to_2dim(output_image_buffer, output_image);
 
-  //detect_cells(output_image_buffer, output_image_buffer_final);
-  //convert_3dim_to_2dim(output_image_buffer_final, output_image);
+  detect_cells(output_image_buffer, output_image_buffer_final);
+  convert_3dim_to_2dim(output_image_buffer_final, output_image);
 
   // Save image to file
   write_bitmap(output_image, argv[2]);
