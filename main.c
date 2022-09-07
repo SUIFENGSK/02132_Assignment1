@@ -95,3 +95,21 @@ void convert_3dim_to_2dim(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsi
     }
   }
 }
+
+void convert_to_binary_threshold(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_binary_threshold[BMP_WIDTH][BMP_HEIGTH])
+{
+  for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+      if (input_image[x][y] > THRESHOLD)
+      {
+        output_image_binary_threshold[x][y] = 255;
+      }
+      else
+      {
+        output_image_binary_threshold[x][y] = 0;
+      }
+    }
+  }
+}
