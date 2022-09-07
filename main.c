@@ -15,31 +15,22 @@
 #include "cbmp.h"
 
 #define THRESHOLD 90
+#define DETECTION_FRAME 25
 
 void convert_to_binary_threshold(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_binary_threshold[BMP_WIDTH][BMP_HEIGTH]);
 
-// Function to invert pixels of an image (negative)
-void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
-{
-  for (int x = 0; x < BMP_WIDTH; x++)
-  {
-    for (int y = 0; y < BMP_HEIGTH; y++)
-    {
-      for (int c = 0; c < BMP_CHANNELS; c++)
-      {
-        output_image[x][y][c] = 255 - input_image[x][y][c];
-      }
-    }
-  }
-}
-
 void convert_RGB_to_gray(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image_gray[BMP_WIDTH][BMP_HEIGTH]);
 void convert_3dim_to_2dim(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
+
+void detect_cells(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_temp[BMP_WIDTH][BMP_HEIGTH]);
+void delete_pixels(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_temp[BMP_WIDTH][BMP_HEIGTH], unsigned char start_x, unsigned char start_y);
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 unsigned char output_image_gray[BMP_WIDTH][BMP_HEIGTH];
+unsigned char output_image_binary[BMP_WIDTH][BMP_HEIGTH];
+unsigned char output_image_temp[BMP_WIDTH][BMP_HEIGTH];
 
 // Main function
 int main(int argc, char **argv)
@@ -64,7 +55,13 @@ int main(int argc, char **argv)
   // Run inversion
   // invert(input_image, output_image);
   convert_RGB_to_gray(input_image, output_image_gray);
-  convert_3dim_to_2dim(output_image_gray,output_image);
+  convert_to_binary_threshold(output_image_gray, output_image_binary);
+
+  // convert_3dim_to_2dim(output_image_binary, output_image_temp);
+  // write_bitmap(output_image_temp, "example_temp.bmp");
+
+  detect_cells(output_image_binary, output_image_temp);
+  convert_3dim_to_2dim(output_image_temp,output_image);
 
   // Save image to file
   write_bitmap(output_image, argv[2]);
@@ -113,3 +110,72 @@ void convert_to_binary_threshold(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH
     }
   }
 }
+
+
+void detect_cells(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_temp[BMP_WIDTH][BMP_HEIGTH]) {
+
+  unsigned char frame[DETECTION_FRAME][DETECTION_FRAME];
+  unsigned char radius = DETECTION_FRAME/2;
+
+  unsigned char detected_cells = 0;
+
+  unsigned char invalid = 0;
+  unsigned char found_white = 0;
+
+  for (int image_x = 0; image_x < BMP_WIDTH; image_x++) {
+    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++)
+    {
+
+      // Copy input image pixel over to output image
+      output_image_temp[image_x][image_y] = input_image[image_x][image_y];
+
+      // Reset invalid-boolean
+      invalid = 0;
+
+      // Loop through every x-coordinate
+      for (int x = image_x - radius; x < image_x + radius; x++) {
+
+        // If previous pixel was invalid, break out of loop
+        if (invalid) {
+          break;
+        }
+
+        // Loop through every y-coordinate
+        for (int y = image_y - radius; y < image_y + radius; y++) {
+
+          // If a white pixel is found on the border (outer pixel) of the detection frame, then the cell is invalid
+          if ((x==0 || x==radius-1 || y==0 || y==radius-1) && input_image[x][y] != 0) {
+            invalid = 1;
+            break;
+          } else if ((x != 0 && y != 0) && input_image[x][y] != 0) { // Else, if a white cell is found within the detection frame, note it
+            found_white = 1;
+            continue;
+          }
+
+        }
+      }
+
+      // If the previous loop wasn't invalid and it found atleast one white pixel, then make every pixel within the frame black,
+      // and add one to amount of detected cells
+      if (!invalid && found_white) {
+        for (int x = image_x - radius; x < image_x + radius; x++) {
+          for (int y = image_y - radius; y < image_y + radius; y++) {
+            output_image_temp[x][y] = 0;
+          }
+        }
+
+        detected_cells++;
+      }
+
+
+
+    }
+    
+  }
+
+  printf("Found %d cells", detected_cells);
+
+
+}
+
+
