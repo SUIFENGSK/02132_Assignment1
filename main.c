@@ -76,19 +76,21 @@ int main(int argc, char **argv)
   convert_RGB_to_GS_and_apply_BT(input_image, output_image_buffer);
   int i = 0;
   // Erode image
-  // while (check_white_points(output_image_buffer))
-  // {
-  //   erode_image(output_image_buffer, output_image_buffer_temp);
-  //   swap_arrays(&output_image_buffer, &output_image_buffer_temp);
-  //   convert_2dim_to_3dim(output_image_buffer, output_image);
-  //   char str[100];
-  //   sprintf(str, "erode_%d.bmp", i);
-  //   i++;
-  //   write_bitmap(output_image, str);
-  // }
+  while (check_white_points(output_image_buffer))
+  {
+    erode_image(output_image_buffer, output_image_buffer_temp);
+    swap_arrays(&output_image_buffer, &output_image_buffer_temp);
+    detect_cells(output_image_buffer, output_image_buffer_final);
+    swap_arrays(&output_image_buffer, &output_image_buffer_final);
+    // convert_2dim_to_3dim(output_image_buffer, output_image);
+    // char str[100];
+    // sprintf(str, "erode_%d.bmp", i);
+    // i++;
+    // write_bitmap(output_image, str);
+  }
   // convert_2dim_to_3dim(output_image_buffer, output_image);
 
-  // detect_cells(output_image_buffer, output_image_buffer_final);
+  
   draw_cross_and_print_results(input_image, cells_pos_p, output_image);
   // convert_2dim_to_3dim(output_image_buffer_final, output_image);
 
@@ -221,8 +223,10 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (
         }
 
         if (invalid != 1) {
+          cells_pos[detected_cells][0] = image_x;
+          cells_pos[detected_cells][1] = image_y;
           detected_cells++;
-          printf("x: %d\ny: %d\n\n", image_x, image_y);
+          // printf("x: %d\ny: %d\n\n", image_x, image_y);
 
 
           for (int x = image_x - radius; x <= image_x + radius; x++) {
