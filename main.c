@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include "cbmp.h"
 
 #define THRESHOLD 90
@@ -55,6 +56,10 @@ int main(int argc, char **argv)
   // argv[1] is the first command line argument (input image)
   // argv[2] is the second command line argument (output image)
 
+  clock_t start, end;
+  double cpu_time_used;
+  start = clock(); /* The code that has to be measured. */
+
   // Checking that 2 arguments are passed
   if (argc != 3)
   {
@@ -91,6 +96,10 @@ int main(int argc, char **argv)
   write_bitmap(output_image, argv[2]);
 
   printf("Done!\n");
+  
+  end = clock();
+  cpu_time_used = end - start;
+  printf("Total time: %f ms\n", cpu_time_used * 1000.0 / CLOCKS_PER_SEC);
   return 0;
 }
 
@@ -251,9 +260,9 @@ void copy_array(unsigned char (*arr1)[BMP_SIZE][BMP_CHANNELS], unsigned char (*a
 void draw_cross(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
 {
   copy_array(input_image, output_image);
-  //test drawing
-  // cells_pos_p[0][0]=100;
-  // cells_pos_p[0][1]=100;
+  // test drawing
+  //  cells_pos_p[0][0]=100;
+  //  cells_pos_p[0][1]=100;
   for (int i = 0; i < CELLS_MAX; i++)
   {
     int pos_x = cells_pos_p[i][0];
