@@ -41,12 +41,12 @@ unsigned int cells_pos[CELLS_MAX][2]; // only x and y
 
 unsigned char image1[BMP_SIZE][BMP_SIZE];
 unsigned char image2[BMP_SIZE][BMP_SIZE];
-unsigned char image3[BMP_SIZE][BMP_SIZE];
 
 unsigned char (*output_image_buffer)[BMP_SIZE] = image1;
 unsigned char (*output_image_buffer_temp)[BMP_SIZE] = image2;
-unsigned char (*output_image_buffer_final)[BMP_SIZE] = image3;
 unsigned int (*cells_pos_p)[2] = cells_pos;
+
+unsigned int detected_cells = 0;
 
 // Main function
 int main(int argc, char **argv)
@@ -88,15 +88,10 @@ int main(int argc, char **argv)
     // i++;
     // write_bitmap(output_image, str);
   }
-  // convert_2dim_to_3dim(output_image_buffer, output_image);
-
-  
   draw_cross_and_print_results(input_image, cells_pos_p, output_image);
-  // convert_2dim_to_3dim(output_image_buffer_final, output_image);
-
   // Save image to file
   write_bitmap(output_image, argv[2]);
-
+  printf("Found %d cells\n", detected_cells);
   printf("Done!\n");
 
   end = clock();
@@ -180,69 +175,69 @@ void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_
 
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
 {
-  printf("%s", "Start!\n");
   unsigned char frame[DETECTION_FRAME][DETECTION_FRAME];
   unsigned char radius = DETECTION_FRAME / 2;
-
-  unsigned char output_image_buffer[BMP_SIZE][BMP_SIZE];
-
-  unsigned int detected_cells = 0;
-
   unsigned char invalid = 0;
-  unsigned char found_white = 0;
 
-  for (int image_x = 0; image_x < BMP_WIDTH; image_x++) {
-    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++) {
-      // Copy input image pixel over to output image
-      output_image_buffer[image_x][image_y] = input_image_buffer[image_x][image_y];
-    }
-  }
-
-
-  for (int image_x = 0; image_x < BMP_WIDTH; image_x++) {
-    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++) {
-      
+  for (int image_x = 0; image_x < BMP_WIDTH; image_x++)
+  {
+    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++)
+    {
       invalid = 0;
-
-      if (output_image_buffer[image_x][image_y] == 255) {
-
-        for (int border_x = image_x - radius; border_x <= image_x + radius; border_x++) {
-
-          if (((border_x >= 0 && border_x < BMP_WIDTH) && (image_y - radius >= 0 && image_y + radius < BMP_HEIGTH)) && output_image_buffer[border_x][image_y - radius] != 0) {
-            invalid = 1;
+      if (input_image_buffer[image_x][image_y] == 255)
+      {
+        for (int border_x = image_x - radius; border_x <= image_x + radius; border_x++)
+        {
+          if (border_x >= 0 && border_x < BMP_WIDTH)
+          {
+            if (image_y - radius >= 0 && input_image_buffer[border_x][image_y - radius] != 0)
+            {
+              invalid = 1;
+              goto jump;
+            }
+            if (image_y + radius < BMP_HEIGTH && input_image_buffer[border_x][image_y + radius] != 0)
+            {
+              invalid = 1;
+              goto jump;
+            }
           }
-
         }
 
-        for (int border_y = image_y - radius; border_y <= image_y + radius; border_y++ ) {
-          if (((border_y >= 0 && border_y < BMP_HEIGTH) && (image_x - radius >= 0 && image_x + radius < BMP_WIDTH)) && output_image_buffer[image_x - radius][border_y] != 0) {
-            invalid = 1;
+        for (int border_y = image_y - radius; border_y <= image_y + radius; border_y++)
+        {
+          if (border_y >= 0 && border_y < BMP_HEIGTH)
+          {
+            if (image_x - radius >= 0 && input_image_buffer[image_x - radius][border_y] != 0)
+            {
+              invalid = 1;
+              goto jump;
+            }
+            if (image_x + radius < BMP_WIDTH && input_image_buffer[image_x + radius][border_y] != 0)
+            {
+              invalid = 1;
+              goto jump;
+            }
           }
         }
 
-        if (invalid != 1) {
+      jump:
+        if (invalid != 1)
+        {
           cells_pos[detected_cells][0] = image_x;
           cells_pos[detected_cells][1] = image_y;
           detected_cells++;
-          // printf("x: %d\ny: %d\n\n", image_x, image_y);
-
-
-          for (int x = image_x - radius; x <= image_x + radius; x++) {
-            for (int y = image_y - radius; y <= image_y + radius; y++) {
-              output_image_buffer[x][y] = 0;
+          for (int x = image_x - radius; x <= image_x + radius; x++)
+          {
+            for (int y = image_y - radius; y <= image_y + radius; y++)
+            {
+              if ((x >= 0 && x < BMP_WIDTH) && (y >= 0 && y < BMP_HEIGTH))
+              {
+                input_image_buffer[x][y] = 0;
+              }
             }
           }
-
         }
       }
-    }
-  }
-
-  printf("Found %d cells\n", detected_cells);
-  for (int image_x = 0; image_x < BMP_WIDTH; image_x++) {
-    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++) {
-      // Copy output image pixel over to input image
-      input_image_buffer[image_x][image_y] = output_image_buffer[image_x][image_y];
     }
   }
 }
@@ -273,7 +268,7 @@ void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGT
     int pos_y = cells_pos_p[i][1];
     if (pos_x == 0 && pos_y == 0)
     {
-      printf("%s\n", "jump");
+      //printf("%s\n", "jump");
       break;
     }
     else
