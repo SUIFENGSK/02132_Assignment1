@@ -32,7 +32,7 @@ void copy_array(unsigned char (*arr1)[BMP_SIZE][BMP_CHANNELS], unsigned char (*a
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE]);
 // void delete_pixels(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_temp[BMP_WIDTH][BMP_HEIGTH], unsigned char start_x, unsigned char start_y);
 
-void draw_cross(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
+void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
@@ -89,14 +89,14 @@ int main(int argc, char **argv)
   // convert_2dim_to_3dim(output_image_buffer, output_image);
 
   // detect_cells(output_image_buffer, output_image_buffer_final);
-  draw_cross(input_image, cells_pos_p, output_image);
+  draw_cross_and_print_results(input_image, cells_pos_p, output_image);
   // convert_2dim_to_3dim(output_image_buffer_final, output_image);
 
   // Save image to file
   write_bitmap(output_image, argv[2]);
 
   printf("Done!\n");
-  
+
   end = clock();
   cpu_time_used = end - start;
   printf("Total time: %f ms\n", cpu_time_used * 1000.0 / CLOCKS_PER_SEC);
@@ -257,12 +257,12 @@ void copy_array(unsigned char (*arr1)[BMP_SIZE][BMP_CHANNELS], unsigned char (*a
   }
 }
 
-void draw_cross(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
+void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
 {
   copy_array(input_image, output_image);
   // test drawing
-  //  cells_pos_p[0][0]=100;
-  //  cells_pos_p[0][1]=100;
+  // cells_pos_p[0][0]=100;
+  // cells_pos_p[0][1]=100;
   for (int i = 0; i < CELLS_MAX; i++)
   {
     int pos_x = cells_pos_p[i][0];
@@ -271,6 +271,10 @@ void draw_cross(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], 
     {
       printf("%s\n", "jump");
       break;
+    }
+    else
+    {
+      printf("Nr.%d : [%d,%d]\n", i + 1, pos_x, pos_y);
     }
     // draw red cross
     // start x-direction
