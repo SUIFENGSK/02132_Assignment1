@@ -29,7 +29,7 @@ int check_white_points(unsigned char (*output_image_buffer)[BMP_SIZE]);
 void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_SIZE]);
 void copy_array(unsigned char (*arr1)[BMP_SIZE][BMP_CHANNELS], unsigned char (*arr2)[BMP_SIZE][BMP_CHANNELS]);
 
-void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE]);
+void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE]);
 // void delete_pixels(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_temp[BMP_WIDTH][BMP_HEIGTH], unsigned char start_x, unsigned char start_y);
 
 void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
@@ -80,8 +80,8 @@ int main(int argc, char **argv)
   {
     erode_image(output_image_buffer, output_image_buffer_temp);
     swap_arrays(&output_image_buffer, &output_image_buffer_temp);
-    detect_cells(output_image_buffer, output_image_buffer_final);
-    swap_arrays(&output_image_buffer, &output_image_buffer_final);
+    detect_cells(output_image_buffer);
+    // swap_arrays(&output_image_buffer, &output_image_buffer_final);
     // convert_2dim_to_3dim(output_image_buffer, output_image);
     // char str[100];
     // sprintf(str, "erode_%d.bmp", i);
@@ -178,11 +178,13 @@ void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_
   *arr_2 = temp;
 }
 
-void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE])
+void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
 {
   printf("%s", "Start!\n");
   unsigned char frame[DETECTION_FRAME][DETECTION_FRAME];
   unsigned char radius = DETECTION_FRAME / 2;
+
+  unsigned char output_image_buffer[BMP_SIZE][BMP_SIZE];
 
   unsigned int detected_cells = 0;
 
@@ -206,18 +208,14 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (
 
         for (int border_x = image_x - radius; border_x <= image_x + radius; border_x++) {
 
-          if ((border_x >= 0) && output_image_buffer[border_x][image_y - radius] != 0) {
-            invalid = 1;
-          } else if ((border_x < BMP_HEIGTH) && output_image_buffer[border_x][image_y + radius] != 0) {
+          if (((border_x >= 0 && border_x < BMP_WIDTH) && (image_y - radius >= 0 && image_y + radius < BMP_HEIGTH)) && output_image_buffer[border_x][image_y - radius] != 0) {
             invalid = 1;
           }
 
         }
 
         for (int border_y = image_y - radius; border_y <= image_y + radius; border_y++ ) {
-          if ((border_y >= 0) && output_image_buffer[image_x - radius][border_y] != 0) {
-            invalid = 1;
-          } else if ((border_y < BMP_WIDTH) && output_image_buffer[image_x + radius][border_y] != 0) {
+          if (((border_y >= 0 && border_y < BMP_HEIGTH) && (image_x - radius >= 0 && image_x + radius < BMP_WIDTH)) && output_image_buffer[image_x - radius][border_y] != 0) {
             invalid = 1;
           }
         }
@@ -241,6 +239,12 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (
   }
 
   printf("Found %d cells\n", detected_cells);
+  for (int image_x = 0; image_x < BMP_WIDTH; image_x++) {
+    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++) {
+      // Copy output image pixel over to input image
+      input_image_buffer[image_x][image_y] = output_image_buffer[image_x][image_y];
+    }
+  }
 }
 
 void copy_array(unsigned char (*arr1)[BMP_SIZE][BMP_CHANNELS], unsigned char (*arr2)[BMP_SIZE][BMP_CHANNELS])
