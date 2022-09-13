@@ -178,7 +178,7 @@ void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_
 
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE])
 {
-  printf("%s", "Start\n");
+  printf("%s", "Start!\n");
   unsigned char frame[DETECTION_FRAME][DETECTION_FRAME];
   unsigned char radius = DETECTION_FRAME / 2;
 
