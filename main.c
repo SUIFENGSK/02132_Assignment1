@@ -163,67 +163,63 @@ void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_
 
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE])
 {
-  printf("%s", "start");
+  printf("%s", "Start\n");
   unsigned char frame[DETECTION_FRAME][DETECTION_FRAME];
   unsigned char radius = DETECTION_FRAME / 2;
 
-  unsigned char detected_cells = 0;
+  unsigned int detected_cells = 0;
 
   unsigned char invalid = 0;
   unsigned char found_white = 0;
 
-  for (int image_x = 0; image_x < BMP_WIDTH; image_x++)
-  {
-    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++)
-    {
+  for (int image_x = 0; image_x < BMP_WIDTH; image_x++) {
+    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++) {
       // Copy input image pixel over to output image
       output_image_buffer[image_x][image_y] = input_image_buffer[image_x][image_y];
+    }
+  }
 
-      // Reset invalid-boolean
+
+  for (int image_x = 0; image_x < BMP_WIDTH; image_x++) {
+    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++) {
+      
       invalid = 0;
 
-      // Loop through every x-coordinate
-      for (int x = image_x - radius; x < image_x + radius; x++)
-      {
+      if (output_image_buffer[image_x][image_y] == 255) {
 
-        // If previous pixel was invalid, break out of loop
-        if (invalid)
-        {
-          break;
-        }
+        for (int border_x = image_x - radius; border_x <= image_x + radius; border_x++) {
 
-        // Loop through every y-coordinate
-        for (int y = image_y - radius; y < image_y + radius; y++)
-        {
-
-          // If a white pixel is found on the border (outer pixel) of the detection frame, then the cell is invalid
-          if ((x == 0 || x == radius - 1 || y == 0 || y == radius - 1) && input_image_buffer[x][y] != 0)
-          {
+          if ((border_x >= 0) && output_image_buffer[border_x][image_y - radius] != 0) {
             invalid = 1;
-            break;
+          } else if ((border_x < BMP_HEIGTH) && output_image_buffer[border_x][image_y + radius] != 0) {
+            invalid = 1;
           }
-          else if ((x != 0 && y != 0) && input_image_buffer[x][y] != 0)
-          { // Else, if a white cell is found within the detection frame, note it
-            found_white = 1;
-            continue;
-          }
-        }
-      }
 
-      // If the previous loop wasn't invalid and it found atleast one white pixel, then make every pixel within the frame black,
-      // and add one to amount of detected cells
-      if (!invalid && found_white)
-      {
-        for (int x = image_x - radius; x < image_x + radius; x++)
-        {
-          for (int y = image_y - radius; y < image_y + radius; y++)
-          {
-            output_image_buffer[x][y] = 0;
+        }
+
+        for (int border_y = image_y - radius; border_y <= image_y + radius; border_y++ ) {
+          if ((border_y >= 0) && output_image_buffer[image_x - radius][border_y] != 0) {
+            invalid = 1;
+          } else if ((border_y < BMP_WIDTH) && output_image_buffer[image_x + radius][border_y] != 0) {
+            invalid = 1;
           }
         }
-        detected_cells++;
+
+        if (invalid != 1) {
+          detected_cells++;
+          printf("x: %d\ny: %d\n\n", image_x, image_y);
+
+
+          for (int x = image_x - radius; x <= image_x + radius; x++) {
+            for (int y = image_y - radius; y <= image_y + radius; y++) {
+              output_image_buffer[x][y] = 0;
+            }
+          }
+
+        }
       }
     }
   }
-  printf("Found %d cells", detected_cells);
+
+  printf("Found %d cells\n", detected_cells);
 }
