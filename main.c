@@ -13,33 +13,40 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include "cbmp.h"
 
 #define THRESHOLD 90
 #define BMP_SIZE 950
 #define DETECTION_FRAME 25
+#define CELLS_MAX 500
+#define CROSS_SIZE 5
 
 void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char (*output_image_buffer)[BMP_SIZE]);
-void convert_3dim_to_2dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
+void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE]);
 int check_white_points(unsigned char (*output_image_buffer)[BMP_SIZE]);
 void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_SIZE]);
+void copy_array(unsigned char (*arr1)[BMP_SIZE][BMP_CHANNELS], unsigned char (*arr2)[BMP_SIZE][BMP_CHANNELS]);
 
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE]);
 // void delete_pixels(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image_temp[BMP_WIDTH][BMP_HEIGTH], unsigned char start_x, unsigned char start_y);
 
+void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
+
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+unsigned int cells_pos[CELLS_MAX][2]; // only x and y
 
 unsigned char image1[BMP_SIZE][BMP_SIZE];
 unsigned char image2[BMP_SIZE][BMP_SIZE];
 unsigned char image3[BMP_SIZE][BMP_SIZE];
 
-unsigned char (*output_image_buffer)[BMP_HEIGTH] = image1;
-unsigned char (*output_image_buffer_temp)[BMP_HEIGTH] = image2;
-unsigned char (*output_image_buffer_final)[BMP_HEIGTH] = image3;
-
+unsigned char (*output_image_buffer)[BMP_SIZE] = image1;
+unsigned char (*output_image_buffer_temp)[BMP_SIZE] = image2;
+unsigned char (*output_image_buffer_final)[BMP_SIZE] = image3;
+unsigned int (*cells_pos_p)[2] = cells_pos;
 
 // Main function
 int main(int argc, char **argv)
@@ -48,6 +55,10 @@ int main(int argc, char **argv)
   // argv[0] is a string with the name of the program
   // argv[1] is the first command line argument (input image)
   // argv[2] is the second command line argument (output image)
+
+  clock_t start, end;
+  double cpu_time_used;
+  start = clock(); /* The code that has to be measured. */
 
   // Checking that 2 arguments are passed
   if (argc != 3)
@@ -64,26 +75,31 @@ int main(int argc, char **argv)
   // Run
   convert_RGB_to_GS_and_apply_BT(input_image, output_image_buffer);
   int i = 0;
-  // Erode image 
+  // Erode image
   // while (check_white_points(output_image_buffer))
   // {
   //   erode_image(output_image_buffer, output_image_buffer_temp);
   //   swap_arrays(&output_image_buffer, &output_image_buffer_temp);
-  //   convert_3dim_to_2dim(output_image_buffer, output_image);
+  //   convert_2dim_to_3dim(output_image_buffer, output_image);
   //   char str[100];
   //   sprintf(str, "erode_%d.bmp", i);
   //   i++;
   //   write_bitmap(output_image, str);
   // }
-  // convert_3dim_to_2dim(output_image_buffer, output_image);
+  // convert_2dim_to_3dim(output_image_buffer, output_image);
 
-  detect_cells(output_image_buffer, output_image_buffer_final);
-  convert_3dim_to_2dim(output_image_buffer_final, output_image);
+  // detect_cells(output_image_buffer, output_image_buffer_final);
+  draw_cross_and_print_results(input_image, cells_pos_p, output_image);
+  // convert_2dim_to_3dim(output_image_buffer_final, output_image);
 
   // Save image to file
   write_bitmap(output_image, argv[2]);
 
   printf("Done!\n");
+
+  end = clock();
+  cpu_time_used = end - start;
+  printf("Total time: %f ms\n", cpu_time_used * 1000.0 / CLOCKS_PER_SEC);
   return 0;
 }
 
@@ -94,11 +110,10 @@ void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEI
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
       output_image_buffer[x][y] = ((input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) / 3) > THRESHOLD ? 255 : 0;
-      ;
     }
   }
 }
-void convert_3dim_to_2dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
+void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
 {
   for (int x = 0; x < BMP_WIDTH; x++)
   {
@@ -222,4 +237,63 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (
   }
 
   printf("Found %d cells\n", detected_cells);
+}
+
+void copy_array(unsigned char (*arr1)[BMP_SIZE][BMP_CHANNELS], unsigned char (*arr2)[BMP_SIZE][BMP_CHANNELS])
+{
+  for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+      for (int z = 0; z < BMP_CHANNELS; z++)
+      {
+        arr2[x][y][z] = arr1[x][y][z];
+      }
+    }
+  }
+}
+
+void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
+{
+  copy_array(input_image, output_image);
+  // test drawing
+  // cells_pos_p[0][0]=100;
+  // cells_pos_p[0][1]=100;
+  for (int i = 0; i < CELLS_MAX; i++)
+  {
+    int pos_x = cells_pos_p[i][0];
+    int pos_y = cells_pos_p[i][1];
+    if (pos_x == 0 && pos_y == 0)
+    {
+      printf("%s\n", "jump");
+      break;
+    }
+    else
+    {
+      printf("Nr.%d : [%d,%d]\n", i + 1, pos_x, pos_y);
+    }
+    // draw red cross
+    // start x-direction
+    for (int x = -CROSS_SIZE; x <= CROSS_SIZE; x++)
+    {
+      if (pos_x + x > 0 && pos_x + x < BMP_WIDTH)
+      {
+        // draw red x-line
+        output_image[pos_x + x][pos_y][0] = 255;
+        output_image[pos_x + x][pos_y][1] = 0;
+        output_image[pos_x + x][pos_y][2] = 0;
+      }
+    }
+    // Then y-direction
+    for (int y = -CROSS_SIZE; y <= CROSS_SIZE; y++)
+    {
+      if (pos_y + y > 0 && pos_y + y < BMP_HEIGTH)
+      {
+        // draw red y-line
+        output_image[pos_x][pos_y + y][0] = 255;
+        output_image[pos_x][pos_y + y][1] = 0;
+        output_image[pos_x][pos_y + y][2] = 0;
+      }
+    }
+  }
 }
