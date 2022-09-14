@@ -22,6 +22,9 @@
 #define CELLS_MAX 500
 #define CROSS_SIZE 5
 
+// Size of structuring element
+  #define SE_SIZE 5
+
 void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char (*output_image_buffer)[BMP_SIZE]);
 void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE]);
@@ -124,28 +127,61 @@ void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigne
 
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE])
 {
+
+  
+
+  // Structuring element
+  unsigned char se[SE_SIZE][SE_SIZE] = {
+    {0, 0, 0, 0, 0},
+    {0, 0, 1, 0, 0},
+    {0, 1, 0, 1, 0},
+    {0, 0, 1, 0, 0},
+    {0, 0, 0, 0, 0}
+  };
+
+  unsigned char offset = SE_SIZE / 2;
+
   for (int x = 0; x < BMP_WIDTH; x++)
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
-      // printf("%d%s%d%s%d\n", x, " ", y, " ", input_image[x][y]);
-      int pos_left = 0, pos_right = 0, pos_top = 0, pos_down = 0;
-      if (x - 1 >= 0 && input_image_buffer[x - 1][y] == 0)
-        pos_left = 1;
-      if (x + 1 < BMP_WIDTH && input_image_buffer[x + 1][y] == 0)
-        pos_right = 1;
-      if (y - 1 >= 0 && input_image_buffer[x][y - 1] == 0)
-        pos_top = 1;
-      if (y + 1 < BMP_HEIGTH && input_image_buffer[x][y + 1] == 0)
-        pos_down = 1;
-      if (pos_left || pos_right || pos_top || pos_down)
-      {
+
+      
+
+      if (input_image_buffer[x][y] == 255) {
+
+        for (int se_x = 0; se_x < SE_SIZE; se_x++) {
+          for (int se_y = 0; se_y < SE_SIZE; se_y++) {
+
+            // printf("x: %d, y: %d\n", x-offset+se_x, y-offset+se_y);
+
+            if (((x - offset) + se_x >= 0 && (x - offset) + se_x < BMP_WIDTH) && ((y - offset) + se_y >= 0 && (y - offset) + se_y < BMP_HEIGTH)) {
+
+              if (se[se_x][se_y] == 1 && input_image_buffer[(x - offset) + se_x][(y - offset) + se_y] == 0) {
+
+                output_image_buffer[x][y] = 0;
+                goto breakout;
+
+              }
+
+            }
+
+            output_image_buffer[x][y] = input_image_buffer[x][y];
+
+            
+
+          }
+        }
+
+        
+
+      } else {
         output_image_buffer[x][y] = 0;
       }
-      else
-      {
-        output_image_buffer[x][y] = input_image_buffer[x][y];
-      }
+      
+      
+      breakout:
+        continue;
     }
   }
 }
