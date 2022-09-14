@@ -5,8 +5,8 @@
 // To run (win): main.exe example.bmp example_inv.bmp
 //
 // Shuokai
-// cd "g:\OneDrive_PRIVAT\OneDrive\Uni_DTU\3.semester\02132 Computersystemer E22\02132_workspace\02132_Assignment1\" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_inv.bmp}
-// cd "d:\OneDrive_PRIVAT\OneDrive\Uni_DTU\3.semester\02132 Computersystemer E22\02132_workspace\02132_Assignment1\" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_inv.bmp}
+// cd "g:\OneDrive_PRIVAT\OneDrive\Uni_DTU\3.semester\02132 Computersystemer E22\02132_workspace\02132_Assignment1\" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_out.bmp}
+// cd "d:\OneDrive_PRIVAT\OneDrive\Uni_DTU\3.semester\02132 Computersystemer E22\02132_workspace\02132_Assignment1\" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_out.bmp}
 
 // Mathias
 // cd "C:\Users\mathi\Documents\DTU\Computersystemer\Assignment 1\02132_Assignment1" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_inv.bmp}
@@ -19,7 +19,7 @@
 #define THRESHOLD 90
 #define BMP_SIZE 950
 #define DETECTION_FRAME 25
-#define CELLS_MAX 500
+#define CELLS_MAX 300
 #define CROSS_SIZE 5
 
 void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char (*output_image_buffer)[BMP_SIZE]);
@@ -27,14 +27,12 @@ void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigne
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE]);
 unsigned char check_white_points(unsigned char (*output_image_buffer)[BMP_SIZE]);
 void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_SIZE]);
-void copy_array(unsigned char (*arr1)[BMP_SIZE][BMP_CHANNELS], unsigned char (*arr2)[BMP_SIZE][BMP_CHANNELS]);
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE]);
 
-void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
+void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2]);
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 unsigned int cells_pos[CELLS_MAX][2]; // only x and y
 
 unsigned char image1[BMP_SIZE][BMP_SIZE];
@@ -86,10 +84,10 @@ int main(int argc, char **argv)
     // i++;
     // write_bitmap(output_image, str);
   }
-  draw_cross_and_print_results(input_image, cells_pos_p, output_image);
+  draw_cross_and_print_results(input_image, cells_pos_p);
 
   // Save image to file
-  write_bitmap(output_image, argv[2]);
+  write_bitmap(input_image, argv[2]);
   printf("Found %d cells\n", detected_cells);
   printf("Done!\n");
 
@@ -105,7 +103,8 @@ void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEI
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
-      output_image_buffer[x][y] = ((input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) / 3) > THRESHOLD ? 255 : 0;
+      // Use multiplying to avoid division by 3. 2^(n-bit)=3*factor
+      output_image_buffer[x][y] = ((input_image[x][y][0]+input_image[x][y][1]+input_image[x][y][2])*86)>>8 > THRESHOLD ? 255 : 0;
     }
   }
 }
@@ -241,23 +240,8 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
   }
 }
 
-void copy_array(unsigned char (*arr1)[BMP_SIZE][BMP_CHANNELS], unsigned char (*arr2)[BMP_SIZE][BMP_CHANNELS])
+void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2])
 {
-  for (int x = 0; x < BMP_WIDTH; x++)
-  {
-    for (int y = 0; y < BMP_HEIGTH; y++)
-    {
-      for (int z = 0; z < BMP_CHANNELS; z++)
-      {
-        arr2[x][y][z] = arr1[x][y][z];
-      }
-    }
-  }
-}
-
-void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
-{
-  copy_array(input_image, output_image);
   for (int i = 0; i < detected_cells; i++)
   {
     int pos_x = cells_pos_p[i][0];
@@ -270,9 +254,9 @@ void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGT
       if (pos_x + x > 0 && pos_x + x < BMP_WIDTH)
       {
         // draw red x-line
-        output_image[pos_x + x][pos_y][0] = 255;
-        output_image[pos_x + x][pos_y][1] = 0;
-        output_image[pos_x + x][pos_y][2] = 0;
+        input_image[pos_x + x][pos_y][0] = 255;
+        input_image[pos_x + x][pos_y][1] = 0;
+        input_image[pos_x + x][pos_y][2] = 0;
       }
     }
     // Then y-direction
@@ -281,9 +265,9 @@ void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGT
       if (pos_y + y > 0 && pos_y + y < BMP_HEIGTH)
       {
         // draw red y-line
-        output_image[pos_x][pos_y + y][0] = 255;
-        output_image[pos_x][pos_y + y][1] = 0;
-        output_image[pos_x][pos_y + y][2] = 0;
+        input_image[pos_x][pos_y + y][0] = 255;
+        input_image[pos_x][pos_y + y][1] = 0;
+        input_image[pos_x][pos_y + y][2] = 0;
       }
     }
   }
