@@ -26,7 +26,7 @@ void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEI
 void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE]);
 unsigned char check_white_points(unsigned char (*output_image_buffer)[BMP_SIZE]);
-void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_SIZE]);
+void swap_arrays(unsigned char (**arr1)[BMP_SIZE], unsigned char (**arr2)[BMP_SIZE]);
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE]);
 
 void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2]);
@@ -163,12 +163,12 @@ unsigned char check_white_points(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH
   }
 }
 
-void swap_arrays(unsigned char (**arr_1)[BMP_SIZE], unsigned char (**arr_2)[BMP_SIZE])
+void swap_arrays(unsigned char (**arr1)[BMP_SIZE], unsigned char (**arr2)[BMP_SIZE])
 {
   unsigned char(*temp)[BMP_SIZE];
-  temp = *arr_1;
-  *arr_1 = *arr_2;
-  *arr_2 = temp;
+  temp = *arr1;
+  *arr1 = *arr2;
+  *arr2 = temp;
 }
 
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
