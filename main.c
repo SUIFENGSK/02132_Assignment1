@@ -80,7 +80,6 @@ int main(int argc, char **argv)
     erode_image(output_image_buffer, output_image_buffer_temp);
     swap_arrays(&output_image_buffer, &output_image_buffer_temp);
     detect_cells(output_image_buffer);
-    // swap_arrays(&output_image_buffer, &output_image_buffer_final);
     // convert_2dim_to_3dim(output_image_buffer, output_image);
     // char str[100];
     // sprintf(str, "erode_%d.bmp", i);
