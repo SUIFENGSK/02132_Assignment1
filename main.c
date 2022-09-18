@@ -16,6 +16,7 @@
 #include <time.h>
 #include <string.h>
 #include "cbmp.h"
+#include <math.h>
 
 #define THRESHOLD 90
 #define BMP_SIZE 950
@@ -24,7 +25,7 @@
 #define CROSS_SIZE 5
 
 // Size of structuring element
-  #define SE_SIZE 5
+#define SE_SIZE 5
 
 void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char (*output_image_buffer)[BMP_SIZE]);
 void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
@@ -32,10 +33,9 @@ void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*
 unsigned char check_white_points(unsigned char (*output_image_buffer)[BMP_SIZE]);
 void swap_arrays(unsigned char (**arr1)[BMP_SIZE], unsigned char (**arr2)[BMP_SIZE]);
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE]);
-
 void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char print_coordinates);
-
 void print_test(char *arg, char *arg2);
+unsigned char otsu(unsigned char (*input_image_buffer)[BMP_SIZE]);
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
@@ -192,7 +192,18 @@ void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEI
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
       // Use multiplying to avoid division by 3. 2^(n-bit)=3*factor
-      output_image_buffer[x][y] = ((input_image[x][y][0]+input_image[x][y][1]+input_image[x][y][2])*86)>>8 > THRESHOLD ? 255 : 0;
+      output_image_buffer[x][y] = ((input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) * 86) >> 8;
+    }
+  }
+  // Apply Otsu thresholding
+  unsigned char new_threshold = otsu(output_image_buffer);
+  printf("%s%d\n", "newTS: ", new_threshold);
+  for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+      // Use multiplying to avoid division by 3. 2^(n-bit)=3*factor
+      output_image_buffer[x][y] = output_image_buffer[x][y] > new_threshold ? 255 : 0;
     }
   }
 }
@@ -227,38 +238,38 @@ void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
 
-      
+      if (input_image_buffer[x][y] == 255)
+      {
 
-      if (input_image_buffer[x][y] == 255) {
+        for (int se_x = 0; se_x < SE_SIZE; se_x++)
+        {
+          for (int se_y = 0; se_y < SE_SIZE; se_y++)
+          {
 
-        for (int se_x = 0; se_x < SE_SIZE; se_x++) {
-          for (int se_y = 0; se_y < SE_SIZE; se_y++) {
+            // printf("x: %d, y: %d\n", x-offset+se_x, y-offset+se_y);
 
-            if (((x - offset) + se_x >= 0 && (x - offset) + se_x < BMP_WIDTH) && ((y - offset) + se_y >= 0 && (y - offset) + se_y < BMP_HEIGTH)) {
+            if (((x - offset) + se_x >= 0 && (x - offset) + se_x < BMP_WIDTH) && ((y - offset) + se_y >= 0 && (y - offset) + se_y < BMP_HEIGTH))
+            {
 
-              if (se[se_x][se_y] == 1 && input_image_buffer[(x - offset) + se_x][(y - offset) + se_y] == 0) {
+              if (se[se_x][se_y] == 1 && input_image_buffer[(x - offset) + se_x][(y - offset) + se_y] == 0)
+              {
 
                 output_image_buffer[x][y] = 0;
                 goto breakout;
-
               }
-
             }
 
             output_image_buffer[x][y] = input_image_buffer[x][y];
-
-            
-
           }
-        }       
-
-      } else {
+        }
+      }
+      else
+      {
         output_image_buffer[x][y] = 0;
       }
-      
-      
-      breakout:
-        continue;
+
+    breakout:
+      continue;
     }
   }
 }
@@ -481,4 +492,62 @@ void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGT
       }
     }
   }
+}
+// Otsu method
+unsigned char otsu(unsigned char (*input_image_buffer)[BMP_SIZE])
+{
+  unsigned int histogram[256] = {0};
+  unsigned int total_pixel = BMP_WIDTH * BMP_HEIGTH;
+
+  unsigned int n_b = 0; // total background pixel which is less than threshold
+  unsigned int n_f = 0; // total foreground pixel which is greater than threshold
+
+  float omega_b = 0; // The proportion of pixels in the foreground to the entire image
+  float omega_f = 0; // The proportion of pixels in the background to the entire image
+
+  unsigned int sum = 0;   // total img value
+  unsigned int sum_b = 0; // total background value
+  unsigned int sum_f = 0; // total foreground value
+
+  float mu_b = 0; // average of background value
+  float mu_f = 0; // average of foreground value
+
+  unsigned char threshold = 0;
+  float var = 0;
+  unsigned int max = 0;
+
+  printf("%s\n", "start otsu");
+
+  for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+      histogram[input_image_buffer[x][y]]++;
+    }
+  }
+
+  for (int i = 0; i < 256; i++)
+  {
+    sum += i * histogram[i]; // total img value
+  }
+  for (int i = 0; i < 256; i++)
+  {
+    n_f += histogram[i]; // the number of pixels gray value is less than the threshold in the image (foreground)
+    n_b = total_pixel - n_f; // the number of pixels gray value is greater than the threshold in the image (background)
+    omega_f = (float)n_f / total_pixel;
+    omega_b = 1 - omega_f;
+    sum_f += i * histogram[i]; // total foreground img value
+    sum_b = sum - sum_f; // total background img value
+    if (n_f == 0 || n_b == 0) // 0 check
+      continue;
+    mu_f = sum_f / n_f;
+    mu_b = sum_b / n_b;
+    var = omega_f * omega_b * pow(mu_f - mu_b, 2); // ostu formula
+    if (var > max)
+    {
+      max = var;
+      threshold = i;
+    }
+  }
+  return threshold;
 }
