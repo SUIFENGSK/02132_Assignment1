@@ -35,7 +35,7 @@ void swap_arrays(unsigned char (**arr1)[BMP_SIZE], unsigned char (**arr2)[BMP_SI
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE]);
 void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char print_coordinates);
 void print_test(char *arg, char *arg2);
-unsigned char otsu(unsigned char (*input_image_buffer)[BMP_SIZE]);
+unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE]);
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
@@ -70,22 +70,25 @@ int main(int argc, char **argv)
   }
 
   // If a third argument is passed, generate a test file with all the inputs
-  if (strcmp(argv[1],"test") == 0) {
+  if (strcmp(argv[1], "test") == 0)
+  {
     char text_file_name[40];
-    snprintf(text_file_name,sizeof text_file_name,"%s-test-output.txt", argv[2]);
-    
+    snprintf(text_file_name, sizeof text_file_name, "%s-test-output.txt", argv[2]);
+
     output = fopen(text_file_name, "w");
     if (output == NULL)
     {
-        printf("Could not open output file");
-        return 0;
+      printf("Could not open output file");
+      return 0;
     }
 
     unsigned char *print_coordinates = argv[3] != NULL ? argv[3] : "";
 
     print_test(argv[2], print_coordinates);
     return 0;
-  } else {
+  }
+  else
+  {
     output = stdout;
   }
 
@@ -93,7 +96,7 @@ int main(int argc, char **argv)
   double cpu_time_used;
   start = clock(); /* The code that has to be measured. */
 
-  fprintf(stdout,"Program start!\n");
+  fprintf(stdout, "Program start!\n");
 
   // Load image from file
   read_bitmap(argv[1], input_image);
@@ -117,7 +120,7 @@ int main(int argc, char **argv)
 
   // Save image to file
   write_bitmap(input_image, argv[2]);
-  fprintf(output,"Found %d cells\n", detected_cells);
+  fprintf(output, "Found %d cells\n", detected_cells);
   fprintf(output, "Done!\n");
 
   end = clock();
@@ -128,7 +131,8 @@ int main(int argc, char **argv)
 }
 
 // Runs program on all images in the folder (used for testing purposes)
-void print_test(char *arg, char *arg2) {
+void print_test(char *arg, char *arg2)
+{
 
   unsigned char no_images;
   unsigned char print_coordinates;
@@ -137,20 +141,21 @@ void print_test(char *arg, char *arg2) {
   print_coordinates = strcmp(arg2, "all") == 0 ? 1 : 0; // If second argument is "all", print all coordinates
   fprintf(stdout, "%d", print_coordinates);
 
-  for (int i = 1; i <= no_images; i++) {
+  for (int i = 1; i <= no_images; i++)
+  {
 
     // Resets variables
     detected_cells = 0;
     memset(cells_pos, 0, sizeof(cells_pos));
 
-    fprintf(output,"Image %d%s.\n", i, arg);
+    fprintf(output, "Image %d%s.\n", i, arg);
 
     clock_t start, end;
     double cpu_time_used;
     start = clock(); /* The code that has to be measured. */
 
     char file_path[40];
-    snprintf(file_path,sizeof file_path,"samples/%s/%d%s.bmp", arg, i, arg);
+    snprintf(file_path, sizeof file_path, "samples/%s/%d%s.bmp", arg, i, arg);
 
     // Load image from file
     read_bitmap(file_path, input_image);
@@ -169,44 +174,47 @@ void print_test(char *arg, char *arg2) {
 
     // Output image name
     char output_image_name[40];
-    snprintf(output_image_name,sizeof output_image_name,"%d%s-output.bmp", i, arg);
+    snprintf(output_image_name, sizeof output_image_name, "%d%s-output.bmp", i, arg);
 
     // Save image to file
 
-    if (print_coordinates) {
+    if (print_coordinates)
+    {
       write_bitmap(input_image, output_image_name);
     }
 
-    fprintf(output,"Found %d cells\n", detected_cells);
+    fprintf(output, "Found %d cells\n", detected_cells);
     fprintf(output, "Done!\n");
 
     end = clock();
     cpu_time_used = end - start;
     fprintf(output, "Total time for image %d%s: %f ms\n\n\n\n", i, arg, cpu_time_used * 1000.0 / CLOCKS_PER_SEC);
-  } 
+  }
 
   fclose(output);
 }
 
 void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char (*output_image_buffer)[BMP_SIZE])
 {
+  unsigned short int img_temp[BMP_SIZE][BMP_SIZE];
+  unsigned short int(*img_temp_p)[BMP_SIZE] = img_temp;
   for (int x = 0; x < BMP_WIDTH; x++)
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
       // Use multiplying to avoid division by 3. 2^(n-bit)=3*factor
-      output_image_buffer[x][y] = ((input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) * 86) >> 8;
+      // img_temp_p[x][y] = ((input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) * 86) >> 8;
+      img_temp_p[x][y] = (input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) / 3;
     }
   }
   // Apply Otsu thresholding
-  unsigned char new_threshold = otsu(output_image_buffer);
-  printf("%s%d\n", "newTS: ", new_threshold);
+  // unsigned char new_threshold = otsu(img_temp_p);
+  // printf("%s%d\n", "newTS: ", new_threshold);
   for (int x = 0; x < BMP_WIDTH; x++)
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
-      // Use multiplying to avoid division by 3. 2^(n-bit)=3*factor
-      output_image_buffer[x][y] = output_image_buffer[x][y] > new_threshold ? 255 : 0;
+      output_image_buffer[x][y] = img_temp_p[x][y] > THRESHOLD ? 255 : 0;
     }
   }
 }
@@ -303,42 +311,40 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
 {
 
   // Detection frame (1's are the pixels that will be checked)
-  /* unsigned char df[DETECTION_FRAME][DETECTION_FRAME] = {
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-  }; */
   unsigned char df[DETECTION_FRAME][DETECTION_FRAME] = {
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-    {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
-    {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
-    {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-    {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0}
-  };
+      {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+      {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+  // unsigned char df[DETECTION_FRAME][DETECTION_FRAME] = {
+  //   {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0},
+  //   {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
+  //   {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+  //   {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
+  //   {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+  //   {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //   {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //   {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //   {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //   {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+  //   {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
+  //   {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+  //   {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
+  //   {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0}
+  // };
 
   unsigned char offset = DETECTION_FRAME / 2;
   unsigned char invalid;
-  
 
   for (int image_x = 0; image_x < BMP_WIDTH; image_x++)
   {
@@ -346,49 +352,48 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
     {
       invalid = 0;
 
-      if (input_image_buffer[image_x][image_y] == 255) {
+      if (input_image_buffer[image_x][image_y] == 255)
+      {
 
-        for (int df_x = 0; df_x < DETECTION_FRAME; df_x++) {
-          for (int df_y = 0; df_y < DETECTION_FRAME; df_y++) {
+        for (int df_x = 0; df_x < DETECTION_FRAME; df_x++)
+        {
+          for (int df_y = 0; df_y < DETECTION_FRAME; df_y++)
+          {
 
-            if (((image_x - offset) + df_x >= 0 && (image_x - offset) + df_x < BMP_WIDTH) && ((image_y - offset) + df_y >= 0 && (image_y - offset) + df_y < BMP_HEIGTH)) {
+            if (((image_x - offset) + df_x >= 0 && (image_x - offset) + df_x < BMP_WIDTH) && ((image_y - offset) + df_y >= 0 && (image_y - offset) + df_y < BMP_HEIGTH))
+            {
 
-              if (df[df_x][df_y] == 1 && input_image_buffer[(image_x - offset) + df_x][(image_y - offset) + df_y] == 255) {
+              if (df[df_x][df_y] == 1 && input_image_buffer[(image_x - offset) + df_x][(image_y - offset) + df_y] == 255)
+              {
 
                 invalid = 1;
                 goto breakout;
-
               }
-
             }
           }
         }
 
-        breakout:
-          if (invalid != 1)
+      breakout:
+        if (invalid != 1)
+        {
+          cells_pos[detected_cells][0] = image_x;
+          cells_pos[detected_cells][1] = image_y;
+          detected_cells++;
+          for (int x = image_x - offset; x <= image_x + offset; x++)
           {
-            cells_pos[detected_cells][0] = image_x;
-            cells_pos[detected_cells][1] = image_y;
-            detected_cells++;
-            for (int x = image_x - offset; x <= image_x + offset; x++)
+            for (int y = image_y - offset; y <= image_y + offset; y++)
             {
-              for (int y = image_y - offset; y <= image_y + offset; y++)
+              if ((x >= 0 && x < BMP_WIDTH) && (y >= 0 && y < BMP_HEIGTH))
               {
-                if ((x >= 0 && x < BMP_WIDTH) && (y >= 0 && y < BMP_HEIGTH))
-                {
-                  input_image_buffer[x][y] = 0;
-                }
+                input_image_buffer[x][y] = 0;
               }
             }
           }
-
+        }
       }
-      
-      
     }
   }
 }
-
 
 /*
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
@@ -468,7 +473,8 @@ void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGT
     int pos_x = cells_pos_p[i][0];
     int pos_y = cells_pos_p[i][1];
 
-    if (print_coordinates != 0) {
+    if (print_coordinates != 0)
+    {
       fprintf(output, "Nr.%d : [%d,%d]\n", i + 1, pos_x, pos_y);
     }
     // draw red cross
@@ -497,7 +503,7 @@ void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGT
   }
 }
 // Otsu method
-unsigned char otsu(unsigned char (*input_image_buffer)[BMP_SIZE])
+unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
 {
   unsigned int histogram[256] = {0};
   unsigned int total_pixel = BMP_WIDTH * BMP_HEIGTH;
@@ -517,7 +523,7 @@ unsigned char otsu(unsigned char (*input_image_buffer)[BMP_SIZE])
 
   unsigned char threshold = 0;
   float var = 0;
-  unsigned int max = 0;
+  float max = 0;
 
   printf("%s\n", "start otsu");
 
@@ -535,13 +541,13 @@ unsigned char otsu(unsigned char (*input_image_buffer)[BMP_SIZE])
   }
   for (int i = 0; i < 256; i++)
   {
-    n_f += histogram[i]; // the number of pixels gray value is less than the threshold in the image (foreground)
+    n_f += histogram[i];     // the number of pixels gray value is less than the threshold in the image (foreground)
     n_b = total_pixel - n_f; // the number of pixels gray value is greater than the threshold in the image (background)
     omega_f = (float)n_f / total_pixel;
     omega_b = 1 - omega_f;
     sum_f += i * histogram[i]; // total foreground img value
-    sum_b = sum - sum_f; // total background img value
-    if (n_f == 0 || n_b == 0) // 0 check
+    sum_b = sum - sum_f;       // total background img value
+    if (n_f == 0 || n_b == 0)  // 0 check
       continue;
     mu_f = sum_f / n_f;
     mu_b = sum_b / n_b;
