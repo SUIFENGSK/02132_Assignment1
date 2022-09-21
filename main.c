@@ -103,6 +103,7 @@ int main(int argc, char **argv)
 
   // Run
   convert_RGB_to_GS_and_apply_BT(input_image, output_image_buffer);
+
   // int i = 0;
   // Erode image
   while (check_white_points(output_image_buffer))
@@ -177,7 +178,6 @@ void print_test(char *arg, char *arg2)
     snprintf(output_image_name, sizeof output_image_name, "%d%s-output.bmp", i, arg);
 
     // Save image to file
-
     if (print_coordinates)
     {
       write_bitmap(input_image, output_image_name);
@@ -203,18 +203,18 @@ void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEI
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
       // Use multiplying to avoid division by 3. 2^(n-bit)=3*factor
-      // img_temp_p[x][y] = ((input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) * 86) >> 8;
-      img_temp_p[x][y] = (input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) / 3;
+      img_temp_p[x][y] = ((input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) * 86) >> 8;
+      //img_temp_p[x][y] = (input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) / 3;
     }
   }
   // Apply Otsu thresholding
-  // unsigned char new_threshold = otsu(img_temp_p);
-  // printf("%s%d\n", "newTS: ", new_threshold);
+  unsigned char new_threshold = otsu(img_temp_p);
+  printf("%s%d\n", "newTS: ", new_threshold);
   for (int x = 0; x < BMP_WIDTH; x++)
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
-      output_image_buffer[x][y] = img_temp_p[x][y] > THRESHOLD ? 255 : 0;
+      output_image_buffer[x][y] = img_temp_p[x][y] > new_threshold ? 255 : 0;
     }
   }
 }
@@ -234,6 +234,13 @@ void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigne
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE])
 {
   // Structuring element (1's are the pixels that will get checked)
+  //   unsigned char se[SE_SIZE][SE_SIZE] = {
+  //   {0, 0, 0, 0, 0},
+  //   {0, 0, 1, 0, 0},
+  //   {0, 1, 1, 1, 0},
+  //   {0, 0, 1, 0, 0},
+  //   {0, 0, 0, 0, 0}
+  // };
   unsigned char se[SE_SIZE][SE_SIZE] = {
     {0, 0, 0, 0, 0},
     {0, 1, 1, 1, 0},
@@ -311,37 +318,37 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
 {
 
   // Detection frame (1's are the pixels that will be checked)
-  unsigned char df[DETECTION_FRAME][DETECTION_FRAME] = {
-      {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
   // unsigned char df[DETECTION_FRAME][DETECTION_FRAME] = {
-  //   {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0},
-  //   {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-  //   {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-  //   {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
-  //   {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-  //   {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //   {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //   {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //   {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //   {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-  //   {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
-  //   {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-  //   {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-  //   {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0}
-  // };
+  //     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+  //     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+  unsigned char df[DETECTION_FRAME][DETECTION_FRAME] = {
+    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
+    {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
+    {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
+    {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+    {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0}
+  };
 
   unsigned char offset = DETECTION_FRAME / 2;
   unsigned char invalid;
@@ -394,77 +401,6 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
     }
   }
 }
-
-/*
-void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
-{
-  unsigned char frame[DETECTION_FRAME][DETECTION_FRAME];
-  unsigned char radius = DETECTION_FRAME / 2;
-  unsigned char invalid = 0;
-
-  for (int image_x = 0; image_x < BMP_WIDTH; image_x++)
-  {
-    for (int image_y = 0; image_y < BMP_HEIGTH; image_y++)
-    {
-      invalid = 0;
-      if (input_image_buffer[image_x][image_y] == 255)
-      {
-        for (int border_x = image_x - radius; border_x <= image_x + radius; border_x++)
-        {
-          if (border_x >= 0 && border_x < BMP_WIDTH)
-          {
-            if (image_y - radius >= 0 && input_image_buffer[border_x][image_y - radius] != 0)
-            {
-              invalid = 1;
-              goto jump;
-            }
-            if (image_y + radius < BMP_HEIGTH && input_image_buffer[border_x][image_y + radius] != 0)
-            {
-              invalid = 1;
-              goto jump;
-            }
-          }
-        }
-
-        for (int border_y = image_y - radius; border_y <= image_y + radius; border_y++)
-        {
-          if (border_y >= 0 && border_y < BMP_HEIGTH)
-          {
-            if (image_x - radius >= 0 && input_image_buffer[image_x - radius][border_y] != 0)
-            {
-              invalid = 1;
-              goto jump;
-            }
-            if (image_x + radius < BMP_WIDTH && input_image_buffer[image_x + radius][border_y] != 0)
-            {
-              invalid = 1;
-              goto jump;
-            }
-          }
-        }
-
-      jump:
-        if (invalid != 1)
-        {
-          cells_pos[detected_cells][0] = image_x;
-          cells_pos[detected_cells][1] = image_y;
-          detected_cells++;
-          for (int x = image_x - radius; x <= image_x + radius; x++)
-          {
-            for (int y = image_y - radius; y <= image_y + radius; y++)
-            {
-              if ((x >= 0 && x < BMP_WIDTH) && (y >= 0 && y < BMP_HEIGTH))
-              {
-                input_image_buffer[x][y] = 0;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-*/
 
 void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char print_coordinates)
 {
