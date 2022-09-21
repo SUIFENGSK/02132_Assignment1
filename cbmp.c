@@ -161,7 +161,8 @@ BMP* bopen(char* file_path)
 
     if(!_validate_depth(bmp->depth))
     {
-        _throw_error("Invalid file depth");
+        bmp -> depth = 24;
+        // _throw_error("Invalid file depth");
     }
 
     _populate_pixel_array(bmp);
