@@ -82,7 +82,9 @@ int main(int argc, char **argv)
       return 0;
     }
 
-    print_test(argv[2], argv[3]);
+    unsigned char *print_coordinates = argv[3] != NULL ? argv[3] : "";
+
+    print_test(argv[2], print_coordinates);
     return 0;
   }
   else
@@ -137,6 +139,7 @@ void print_test(char *arg, char *arg2)
 
   no_images = arg != "impossible" ? 10 : 5;
   print_coordinates = strcmp(arg2, "all") == 0 ? 1 : 0; // If second argument is "all", print all coordinates
+  fprintf(stdout, "%d", print_coordinates);
 
   for (int i = 1; i <= no_images; i++)
   {
