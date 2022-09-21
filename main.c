@@ -228,9 +228,9 @@ void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*
   // Structuring element (1's are the pixels that will get checked)
   unsigned char se[SE_SIZE][SE_SIZE] = {
     {0, 0, 0, 0, 0},
-    {0, 0, 1, 0, 0},
     {0, 1, 1, 1, 0},
-    {0, 0, 1, 0, 0},
+    {0, 1, 1, 1, 0},
+    {0, 1, 1, 1, 0},
     {0, 0, 0, 0, 0}
   };
 
