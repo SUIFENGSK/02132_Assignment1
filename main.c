@@ -444,8 +444,8 @@ unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
   unsigned int histogram[256] = {0};
   unsigned int total_pixel = BMP_WIDTH * BMP_HEIGTH;
 
-  unsigned int n_b = 0; // total background pixel which is less than threshold
-  unsigned int n_f = 0; // total foreground pixel which is greater than threshold
+  unsigned int n_b = 0; // total background pixel which is less than optimal_threshold
+  unsigned int n_f = 0; // total foreground pixel which is greater than optimal_threshold
 
   float omega_b = 0; // The proportion of pixels in the foreground to the entire image
   float omega_f = 0; // The proportion of pixels in the background to the entire image
@@ -457,7 +457,7 @@ unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
   float mu_b = 0; // average of background value
   float mu_f = 0; // average of foreground value
 
-  unsigned char threshold = 0;
+  unsigned char optimal_threshold = 0;
   float var = 0;
   float max = 0;
 
@@ -477,8 +477,8 @@ unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
   }
   for (int i = 0; i < 256; i++)
   {
-    n_f += histogram[i];     // the number of pixels gray value is less than the threshold in the image (foreground)
-    n_b = total_pixel - n_f; // the number of pixels gray value is greater than the threshold in the image (background)
+    n_f += histogram[i];     // the number of pixels gray value is less than the optimal_threshold in the image (foreground)
+    n_b = total_pixel - n_f; // the number of pixels gray value is greater than the optimal_threshold in the image (background)
     omega_f = (float)n_f / total_pixel;
     omega_b = 1 - omega_f;
     sum_f += i * histogram[i]; // total foreground img value
@@ -491,8 +491,8 @@ unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
     if (var > max)
     {
       max = var;
-      threshold = i;
+      optimal_threshold = i;
     }
   }
-  return threshold;
+  return optimal_threshold;
 }
