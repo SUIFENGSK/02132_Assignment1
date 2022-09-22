@@ -447,8 +447,8 @@ unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
   unsigned int n_b = 0; // total background pixel which is less than optimal_threshold
   unsigned int n_f = 0; // total foreground pixel which is greater than optimal_threshold
 
-  float omega_b = 0; // The proportion of pixels in the foreground to the entire image
-  float omega_f = 0; // The proportion of pixels in the background to the entire image
+  float omega_b = 0; // The proportion of pixels in the background to the entire image
+  float omega_f = 0; // The proportion of pixels in the foreground to the entire image
 
   unsigned int sum = 0;   // total img value
   unsigned int sum_b = 0; // total background value
