@@ -458,7 +458,7 @@ unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
   float mu_f = 0; // average of foreground value
 
   unsigned char optimal_threshold = 0;
-  float var = 0;
+  float inter_var = 0; // intra-class variance
   float max = 0;
 
   printf("%s\n", "start otsu");
@@ -487,10 +487,10 @@ unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
       continue;
     mu_f = sum_f / n_f;
     mu_b = sum_b / n_b;
-    var = omega_f * omega_b * pow(mu_f - mu_b, 2); // ostu formula
-    if (var > max)
+    inter_var = omega_f * omega_b * pow(mu_f - mu_b, 2); // ostu formula
+    if (inter_var > max)
     {
-      max = var;
+      max = inter_var;
       optimal_threshold = i;
     }
   }
