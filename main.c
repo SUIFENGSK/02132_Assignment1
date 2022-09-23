@@ -34,12 +34,8 @@ void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*
 unsigned char check_white_points(unsigned char (*output_image_buffer)[BMP_SIZE]);
 void swap_arrays(unsigned char (**arr1)[BMP_SIZE], unsigned char (**arr2)[BMP_SIZE]);
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE]);
-<<<<<<< HEAD
 void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned short int (*cells_pos_p)[2], unsigned char print_coordinates);
-=======
-void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char print_coordinates);
 void run_detection(char *input_image_path, char *output_image_path, int print_coordinates);
->>>>>>> 461c968a73538d71d086ebe226f1ef8f184ac546
 void print_test(char *arg, char *arg2);
 unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE]);
 
@@ -224,11 +220,7 @@ void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigne
 // Erodes image
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE])
 {
-<<<<<<< HEAD
-  //Structuring element (1's are the pixels that will get checked)
-=======
   // Structuring element (1's are the pixels that will get checked)
->>>>>>> 461c968a73538d71d086ebe226f1ef8f184ac546
     unsigned char se[SE_SIZE][SE_SIZE] = {
     {0, 0, 0, 0, 0},
     {0, 0, 1, 0, 0},
@@ -236,14 +228,6 @@ void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*
     {0, 0, 1, 0, 0},
     {0, 0, 0, 0, 0}
   };
-  // new Structuring element
-  // unsigned char se[SE_SIZE][SE_SIZE] = {
-  //   {0, 0, 0, 0, 0},
-  //   {0, 1, 1, 1, 0},
-  //   {0, 1, 1, 1, 0},
-  //   {0, 1, 1, 1, 0},
-  //   {0, 0, 0, 0, 0}
-  // };
 
   // Offset for structuring element
   unsigned char offset = SE_SIZE / 2;
