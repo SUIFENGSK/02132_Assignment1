@@ -33,13 +33,13 @@ void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*
 unsigned char check_white_points(unsigned char (*output_image_buffer)[BMP_SIZE]);
 void swap_arrays(unsigned char (**arr1)[BMP_SIZE], unsigned char (**arr2)[BMP_SIZE]);
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE]);
-void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char print_coordinates);
+void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned short int (*cells_pos_p)[2], unsigned char print_coordinates);
 void print_test(char *arg, char *arg2);
 unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE]);
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-unsigned int cells_pos[CELLS_MAX][2]; // only x and y
+unsigned short int cells_pos[CELLS_MAX][2]; // only x and y
 
 // Used for testing
 FILE *output;
@@ -49,9 +49,9 @@ unsigned char image2[BMP_SIZE][BMP_SIZE];
 
 unsigned char (*output_image_buffer)[BMP_SIZE] = image1;
 unsigned char (*output_image_buffer_temp)[BMP_SIZE] = image2;
-unsigned int (*cells_pos_p)[2] = cells_pos;
+unsigned short int (*cells_pos_p)[2] = cells_pos;
 
-unsigned int detected_cells = 0;
+unsigned short int detected_cells = 0;
 
 // Main function
 int main(int argc, char **argv)
@@ -233,21 +233,22 @@ void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigne
 
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE])
 {
-  // Structuring element (1's are the pixels that will get checked)
-  //   unsigned char se[SE_SIZE][SE_SIZE] = {
-  //   {0, 0, 0, 0, 0},
-  //   {0, 0, 1, 0, 0},
-  //   {0, 1, 1, 1, 0},
-  //   {0, 0, 1, 0, 0},
-  //   {0, 0, 0, 0, 0}
-  // };
-  unsigned char se[SE_SIZE][SE_SIZE] = {
+  //Structuring element (1's are the pixels that will get checked)
+    unsigned char se[SE_SIZE][SE_SIZE] = {
     {0, 0, 0, 0, 0},
+    {0, 0, 1, 0, 0},
     {0, 1, 1, 1, 0},
-    {0, 1, 1, 1, 0},
-    {0, 1, 1, 1, 0},
+    {0, 0, 1, 0, 0},
     {0, 0, 0, 0, 0}
   };
+  // new Structuring element
+  // unsigned char se[SE_SIZE][SE_SIZE] = {
+  //   {0, 0, 0, 0, 0},
+  //   {0, 1, 1, 1, 0},
+  //   {0, 1, 1, 1, 0},
+  //   {0, 1, 1, 1, 0},
+  //   {0, 0, 0, 0, 0}
+  // };
 
   unsigned char offset = SE_SIZE / 2;
 
@@ -402,7 +403,7 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
   }
 }
 
-void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char print_coordinates)
+void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned short int (*cells_pos_p)[2], unsigned char print_coordinates)
 {
   for (int i = 0; i < detected_cells; i++)
   {
