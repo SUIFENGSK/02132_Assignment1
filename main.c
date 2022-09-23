@@ -11,6 +11,7 @@
 // Mathias
 // cd "C:\Users\mathi\Documents\DTU\Computersystemer\Assignment 1\02132_Assignment1" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_inv.bmp}
 
+/* Imports */
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -18,31 +19,36 @@
 #include "cbmp.h"
 #include <math.h>
 
+/* Macro definitions */
 #define THRESHOLD 90
 #define BMP_SIZE 950
 #define DETECTION_FRAME 14
 #define CELLS_MAX 300
 #define CROSS_SIZE 5
-
-// Size of structuring element
 #define SE_SIZE 5
 
+/* Prototypes */
 void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char (*output_image_buffer)[BMP_SIZE]);
 void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE]);
 unsigned char check_white_points(unsigned char (*output_image_buffer)[BMP_SIZE]);
 void swap_arrays(unsigned char (**arr1)[BMP_SIZE], unsigned char (**arr2)[BMP_SIZE]);
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE]);
+<<<<<<< HEAD
 void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned short int (*cells_pos_p)[2], unsigned char print_coordinates);
+=======
+void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int (*cells_pos_p)[2], unsigned char print_coordinates);
+void run_detection(char *input_image_path, char *output_image_path, int print_coordinates);
+>>>>>>> 461c968a73538d71d086ebe226f1ef8f184ac546
 void print_test(char *arg, char *arg2);
 unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE]);
+
+// Used for testing
+FILE *output;
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 unsigned short int cells_pos[CELLS_MAX][2]; // only x and y
-
-// Used for testing
-FILE *output;
 
 unsigned char image1[BMP_SIZE][BMP_SIZE];
 unsigned char image2[BMP_SIZE][BMP_SIZE];
@@ -56,25 +62,29 @@ unsigned short int detected_cells = 0;
 // Main function
 int main(int argc, char **argv)
 {
-  // argc counts how may arguments are passed
-  // argv[0] is a string with the name of the program
-  // argv[1] is the first command line argument (input image)
-  // argv[2] is the second command line argument (output image)
-  // argv[3] is the third (optional) command line argument (test text file)
+  /* 
+  argc counts how many arguments are passed
+  argv[0]: Name of the program
+  argv[1]: First line argument (either the input image or "test")
+  argv[2]: Second line argument (either the output image or the difficulty)
+  argv[3]: Third (optional) line argument to print everything (used for testing) 
+  */
 
-  // Checking that 2 or 3 arguments are passed
+  // Checking that either 2 or 3 arguments are passed
   if (argc < 2 || argc > 4)
   {
     fprintf(stderr, "Usage: %s <output file path> <output file path>\n", argv[0]);
     exit(1);
   }
 
-  // If a third argument is passed, generate a test file with all the inputs
+  // If the first argument is "test", run cell detection on all images in a folder
   if (strcmp(argv[1], "test") == 0)
   {
+    // Output file name
     char text_file_name[40];
     snprintf(text_file_name, sizeof text_file_name, "%s-test-output.txt", argv[2]);
 
+    // Write output to text_file_name
     output = fopen(text_file_name, "w");
     if (output == NULL)
     {
@@ -82,134 +92,112 @@ int main(int argc, char **argv)
       return 0;
     }
 
+    // Determine whether to print coordinates or not
     unsigned char *print_coordinates = argv[3] != NULL ? argv[3] : "";
-
+    
     print_test(argv[2], print_coordinates);
-    return 0;
   }
   else
   {
+    // Write output to console
     output = stdout;
+    run_detection(argv[1], argv[2], 1); // 1 = print coordinates and output image
   }
 
+  
+  fclose(output);
+  return 0;
+}
+
+void run_detection(char *input_image_path, char *output_image_path, int print_coordinates) {
+  
+  // Time execution
   clock_t start, end;
   double cpu_time_used;
-  start = clock(); /* The code that has to be measured. */
-
-  fprintf(stdout, "Program start!\n");
+  start = clock();
 
   // Load image from file
-  read_bitmap(argv[1], input_image);
+  read_bitmap(input_image_path, input_image);
 
-  // Run
+  // Run conversion to greyscale and apply binary threshold
   convert_RGB_to_GS_and_apply_BT(input_image, output_image_buffer);
 
-  // int i = 0;
-  // Erode image
+  
   while (check_white_points(output_image_buffer))
   {
     erode_image(output_image_buffer, output_image_buffer_temp);
     swap_arrays(&output_image_buffer, &output_image_buffer_temp);
     detect_cells(output_image_buffer);
-    // convert_2dim_to_3dim(output_image_buffer, output_image);
-    // char str[100];
-    // sprintf(str, "erode_%d.bmp", i);
-    // i++;
-    // write_bitmap(output_image, str);
   }
-  draw_cross_and_print_results(input_image, cells_pos_p, 1); // 1 = print coordinates
 
-  // Save image to file
-  write_bitmap(input_image, argv[2]);
+  // If print_coordinates is true, then print out all the coordinates for detected cells and save the image to a file
+  draw_cross_and_print_results(input_image, cells_pos_p, print_coordinates);
+  if (print_coordinates)
+  {
+    write_bitmap(input_image, output_image_path);
+  }
+
   fprintf(output, "Found %d cells\n", detected_cells);
   fprintf(output, "Done!\n");
 
+  // Stop timing
   end = clock();
   cpu_time_used = end - start;
-  fprintf(output, "Total time: %f ms\n", cpu_time_used * 1000.0 / CLOCKS_PER_SEC);
-  fclose(output);
-  return 0;
+
+  fprintf(output, "Total time: %f ms\n\n\n", cpu_time_used * 1000.0 / CLOCKS_PER_SEC);
 }
 
 // Runs program on all images in the folder (used for testing purposes)
 void print_test(char *arg, char *arg2)
 {
-
   unsigned char no_images;
   unsigned char print_coordinates;
 
   no_images = arg != "impossible" ? 10 : 5;
-  print_coordinates = strcmp(arg2, "all") == 0 ? 1 : 0; // If second argument is "all", print all coordinates
-  fprintf(stdout, "%d", print_coordinates);
+  print_coordinates = strcmp(arg2, "all") == 0 ? 1 : 0; // If second argument is "all", print all coordinates to output
 
   for (int i = 1; i <= no_images; i++)
   {
-
     // Resets variables
     detected_cells = 0;
     memset(cells_pos, 0, sizeof(cells_pos));
 
     fprintf(output, "Image %d%s.\n", i, arg);
 
-    clock_t start, end;
-    double cpu_time_used;
-    start = clock(); /* The code that has to be measured. */
+    // Create input image file path
+    char input_file_path[40];
+    snprintf(input_file_path, sizeof input_file_path, "samples/%s/%d%s.bmp", arg, i, arg);
 
-    char file_path[40];
-    snprintf(file_path, sizeof file_path, "samples/%s/%d%s.bmp", arg, i, arg);
+    // Create output image file path
+    char output_image_path[40];
+    snprintf(output_image_path, sizeof output_image_path, "%d%s-output.bmp", i, arg);
 
-    // Load image from file
-    read_bitmap(file_path, input_image);
-
-    // Grey scale and binary thresholding
-    convert_RGB_to_GS_and_apply_BT(input_image, output_image_buffer);
-
-    // Erode image and detect cells
-    while (check_white_points(output_image_buffer))
-    {
-      erode_image(output_image_buffer, output_image_buffer_temp);
-      swap_arrays(&output_image_buffer, &output_image_buffer_temp);
-      detect_cells(output_image_buffer);
-    }
-    draw_cross_and_print_results(input_image, cells_pos_p, print_coordinates);
-
-    // Output image name
-    char output_image_name[40];
-    snprintf(output_image_name, sizeof output_image_name, "%d%s-output.bmp", i, arg);
-
-    // Save image to file
-    if (print_coordinates)
-    {
-      write_bitmap(input_image, output_image_name);
-    }
-
-    fprintf(output, "Found %d cells\n", detected_cells);
-    fprintf(output, "Done!\n");
-
-    end = clock();
-    cpu_time_used = end - start;
-    fprintf(output, "Total time for image %d%s: %f ms\n\n\n\n", i, arg, cpu_time_used * 1000.0 / CLOCKS_PER_SEC);
+    // Run detection on the i'th image
+    run_detection(input_file_path, output_image_path, print_coordinates);
+  
   }
-
-  fclose(output);
 }
 
+// Greyscale conversion and binary threshold
 void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char (*output_image_buffer)[BMP_SIZE])
 {
   unsigned short int img_temp[BMP_SIZE][BMP_SIZE];
   unsigned short int(*img_temp_p)[BMP_SIZE] = img_temp;
+
+  // Convert to greyscale
   for (int x = 0; x < BMP_WIDTH; x++)
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
-      // Use multiplying to avoid division by 3. 2^(n-bit)=3*factor
+      // Use multiplication to avoid division by 3. (2^(n-bit)=3*factor)
       img_temp_p[x][y] = ((input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) * 86) >> 8;
-      //img_temp_p[x][y] = (input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2]) / 3;
     }
   }
+
   // Apply Otsu thresholding
   unsigned char new_threshold = otsu(img_temp_p);
-  printf("%s%d\n", "newTS: ", new_threshold);
+
+  // Apply binary threshold
   for (int x = 0; x < BMP_WIDTH; x++)
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
@@ -218,6 +206,8 @@ void convert_RGB_to_GS_and_apply_BT(unsigned char input_image[BMP_WIDTH][BMP_HEI
     }
   }
 }
+
+// Helper function. Convert 2-dimensional array to 3-dimensional array
 void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
 {
   for (int x = 0; x < BMP_WIDTH; x++)
@@ -231,9 +221,14 @@ void convert_2dim_to_3dim(unsigned char (*input_image_buffer)[BMP_SIZE], unsigne
   }
 }
 
+// Erodes image
 void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*output_image_buffer)[BMP_SIZE])
 {
+<<<<<<< HEAD
   //Structuring element (1's are the pixels that will get checked)
+=======
+  // Structuring element (1's are the pixels that will get checked)
+>>>>>>> 461c968a73538d71d086ebe226f1ef8f184ac546
     unsigned char se[SE_SIZE][SE_SIZE] = {
     {0, 0, 0, 0, 0},
     {0, 0, 1, 0, 0},
@@ -250,26 +245,30 @@ void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*
   //   {0, 0, 0, 0, 0}
   // };
 
+  // Offset for structuring element
   unsigned char offset = SE_SIZE / 2;
 
+  // Loop through image
   for (int x = 0; x < BMP_WIDTH; x++)
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
 
+      // If the pixel is white, check it. If not paint output image black
       if (input_image_buffer[x][y] == 255)
       {
 
+        // Loop through the structuring element
         for (int se_x = 0; se_x < SE_SIZE; se_x++)
         {
           for (int se_y = 0; se_y < SE_SIZE; se_y++)
           {
 
-            // printf("x: %d, y: %d\n", x-offset+se_x, y-offset+se_y);
-
+            // Checks if the pixels around the pixel in question is within the image
             if (((x - offset) + se_x >= 0 && (x - offset) + se_x < BMP_WIDTH) && ((y - offset) + se_y >= 0 && (y - offset) + se_y < BMP_HEIGTH))
             {
 
+              // If structuring element is 1, and the corresponding pixel is black, paint the pixel black and continue
               if (se[se_x][se_y] == 1 && input_image_buffer[(x - offset) + se_x][(y - offset) + se_y] == 0)
               {
 
@@ -278,6 +277,7 @@ void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*
               }
             }
 
+            // If the nested if-statements didn't go to breakout, copy pixel
             output_image_buffer[x][y] = input_image_buffer[x][y];
           }
         }
@@ -293,6 +293,7 @@ void erode_image(unsigned char (*input_image_buffer)[BMP_SIZE], unsigned char (*
   }
 }
 
+// Checks whether there's still white pixels in the image
 unsigned char check_white_points(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH])
 {
   for (int x = 0; x < BMP_WIDTH; x++)
@@ -307,6 +308,7 @@ unsigned char check_white_points(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH
   }
 }
 
+// Helper function. Swaps two arrays
 void swap_arrays(unsigned char (**arr1)[BMP_SIZE], unsigned char (**arr2)[BMP_SIZE])
 {
   unsigned char(*temp)[BMP_SIZE];
@@ -315,25 +317,11 @@ void swap_arrays(unsigned char (**arr1)[BMP_SIZE], unsigned char (**arr2)[BMP_SI
   *arr2 = temp;
 }
 
+// Detects cells that fulfill detection criteria
 void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
 {
 
-  // Detection frame (1's are the pixels that will be checked)
-  // unsigned char df[DETECTION_FRAME][DETECTION_FRAME] = {
-  //     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-  //     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+  // Detection frame used for detecting cells
   unsigned char df[DETECTION_FRAME][DETECTION_FRAME] = {
     {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0},
@@ -354,26 +342,31 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
   unsigned char offset = DETECTION_FRAME / 2;
   unsigned char invalid;
 
+  // Loop through every pixel in the image
   for (int image_x = 0; image_x < BMP_WIDTH; image_x++)
   {
     for (int image_y = 0; image_y < BMP_HEIGTH; image_y++)
     {
+      // Reset invalid variable
       invalid = 0;
 
+      // If the pixel is white, check if it fulfills detection frame
       if (input_image_buffer[image_x][image_y] == 255)
       {
 
+        // Loop through detection frame
         for (int df_x = 0; df_x < DETECTION_FRAME; df_x++)
         {
           for (int df_y = 0; df_y < DETECTION_FRAME; df_y++)
           {
 
+            // Checks whether the border pixels is within the image
             if (((image_x - offset) + df_x >= 0 && (image_x - offset) + df_x < BMP_WIDTH) && ((image_y - offset) + df_y >= 0 && (image_y - offset) + df_y < BMP_HEIGTH))
             {
 
+              // If the detection frame element is 1, and the pixel in the image is white, the cell is invalid
               if (df[df_x][df_y] == 1 && input_image_buffer[(image_x - offset) + df_x][(image_y - offset) + df_y] == 255)
               {
-
                 invalid = 1;
                 goto breakout;
               }
@@ -381,7 +374,9 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
           }
         }
 
+      // Used to breakout of the nested for-loops
       breakout:
+        // If the cell wasn't invalid, note it and erase the cell
         if (invalid != 1)
         {
           cells_pos[detected_cells][0] = image_x;
@@ -405,6 +400,7 @@ void detect_cells(unsigned char (*input_image_buffer)[BMP_SIZE])
 
 void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned short int (*cells_pos_p)[2], unsigned char print_coordinates)
 {
+  // Loop through every detected cell
   for (int i = 0; i < detected_cells; i++)
   {
     int pos_x = cells_pos_p[i][0];
@@ -414,13 +410,14 @@ void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGT
     {
       fprintf(output, "Nr.%d : [%d,%d]\n", i + 1, pos_x, pos_y);
     }
-    // draw red cross
-    // start x-direction
+
+    // Draw red cross
+    // Start with x-direction
     for (int x = -CROSS_SIZE; x <= CROSS_SIZE; x++)
     {
       if (pos_x + x > 0 && pos_x + x < BMP_WIDTH)
       {
-        // draw red x-line
+        // Draw red x-line
         input_image[pos_x + x][pos_y][0] = 255;
         input_image[pos_x + x][pos_y][1] = 0;
         input_image[pos_x + x][pos_y][2] = 0;
@@ -431,7 +428,7 @@ void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGT
     {
       if (pos_y + y > 0 && pos_y + y < BMP_HEIGTH)
       {
-        // draw red y-line
+        // Draw red y-line
         input_image[pos_x][pos_y + y][0] = 255;
         input_image[pos_x][pos_y + y][1] = 0;
         input_image[pos_x][pos_y + y][2] = 0;
@@ -439,6 +436,7 @@ void draw_cross_and_print_results(unsigned char input_image[BMP_WIDTH][BMP_HEIGT
     }
   }
 }
+
 // Otsu method
 unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
 {
@@ -461,8 +459,6 @@ unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
   unsigned char optimal_threshold = 0;
   float inter_var = 0; // intra-class variance
   float max = 0;
-
-  printf("%s\n", "start otsu");
 
   for (int x = 0; x < BMP_WIDTH; x++)
   {
