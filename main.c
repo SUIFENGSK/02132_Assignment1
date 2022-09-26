@@ -458,12 +458,12 @@ unsigned char otsu(unsigned short int (*input_image_buffer)[BMP_SIZE])
   }
   for (int i = 0; i < 256; i++)
   {
-    n_b += histogram[i];     // the number of pixels gray value is less than the optimal_threshold in the image (foreground)
-    n_f = total_pixel - n_b; // the number of pixels gray value is greater than the optimal_threshold in the image (background)
+    n_b += histogram[i];     // the number of pixels gray value is less than the optimal_threshold in the image (background)
+    n_f = total_pixel - n_b; // the number of pixels gray value is greater than the optimal_threshold in the image (foreground)
     omega_b = (float)n_b / total_pixel;
     omega_f = 1 - omega_b;
-    sum_b += i * histogram[i]; // total foreground img value
-    sum_f = sum - sum_b;       // total background img value
+    sum_b += i * histogram[i]; // total background img value
+    sum_f = sum - sum_b;       // total foreground img value
     if (n_f == 0 || n_b == 0)  // 0 check
       continue;
     mu_b = sum_b / n_b;
