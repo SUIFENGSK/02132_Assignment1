@@ -1,16 +1,3 @@
-// To compile (linux/mac): gcc cbmp.c main.c -o main.out -std=c99
-// To run (linux/mac): ./main.out example.bmp example_inv.bmp
-
-// To compile (win): gcc cbmp.c main.c -o main.exe -std=c99
-// To run (win): main.exe example.bmp example_inv.bmp
-//
-// Shuokai
-// cd "g:\OneDrive_PRIVAT\OneDrive\Uni_DTU\3.semester\02132 Computersystemer E22\02132_workspace\02132_Assignment1\" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_out.bmp}
-// cd "d:\OneDrive_PRIVAT\OneDrive\Uni_DTU\3.semester\02132 Computersystemer E22\02132_workspace\02132_Assignment1\" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_out.bmp}
-
-// Mathias
-// cd "C:\Users\mathi\Documents\DTU\Computersystemer\Assignment 1\02132_Assignment1" ; if ($?) { gcc cbmp.c  main.c -o main } ; if ($?) { .\main example.bmp example_inv.bmp}
-
 /* Imports */
 #include <stdlib.h>
 #include <stdio.h>
